@@ -23,8 +23,8 @@ class MP3SchedulerApp:
         self.random_start = tk.StringVar()
         self.random_end = tk.StringVar()
 
-        self.stop_flag = False  # lets us cancel a wait in progress
-        self.target_time = None  # set while a wait is in progress, used for countdown
+        self.stop_flag = False 
+        self.target_time = None
 
         # Options
         self.show_countdown_var = tk.BooleanVar(value=True)
@@ -39,13 +39,12 @@ class MP3SchedulerApp:
         self.mode.trace_add("write", lambda *args: self.update_mode_ui())
         self.apply_theme()
 
-        # Size the window to fit its actual content instead of a guessed fixed size
         self.root.update_idletasks()
         req_w = max(480, self.root.winfo_reqwidth())
         req_h = self.root.winfo_reqheight()
         self.root.geometry(f"{req_w}x{req_h}")
 
-    # ---------------- Menu ----------------
+    #Menu
 
     def _build_menu(self):
         menubar = tk.Menu(self.root)
@@ -65,12 +64,12 @@ class MP3SchedulerApp:
 
         self.root.config(menu=menubar)
 
-    # ---------------- UI ----------------
+    #GUI
 
     def _build_ui(self):
         pad = {"padx": 10, "pady": 6}
 
-        # File / folder picker
+        #file / folder picker
         self.file_frame = ttk.LabelFrame(self.root, text="MP3 Source")
         self.file_frame.pack(fill="x", **pad)
 
@@ -92,7 +91,7 @@ class MP3SchedulerApp:
             anchor="w", padx=8, pady=(0, 8)
         )
 
-        # Mode selector — order: specific time, random, now
+        #mode select
         self.mode_frame = ttk.LabelFrame(self.root, text="When to Play")
         self.mode_frame.pack(fill="x", **pad)
 
@@ -122,7 +121,7 @@ class MP3SchedulerApp:
             command=self.update_mode_ui
         ).pack(anchor="w", padx=8, pady=(2, 8))
 
-        # Controls
+        #controls
         control_frame = ttk.Frame(self.root)
         control_frame.pack(fill="x", **pad)
 
@@ -136,7 +135,7 @@ class MP3SchedulerApp:
         )
         self.cancel_btn.pack(side="left")
 
-        # Status
+        #status
         self.status_frame = ttk.LabelFrame(self.root, text="Status")
         self.status_frame.pack(fill="x", **pad)
 
@@ -156,14 +155,11 @@ class MP3SchedulerApp:
         self.random_start_entry.configure(state=state)
         self.random_end_entry.configure(state=state)
 
-        # Change button label depending on mode
         self.schedule_btn.configure(text="Play" if mode == "now" else "Schedule")
 
-    # ---------------- Options ----------------
+    #options
 
     def on_countdown_toggle(self):
-        # If we're mid-wait and countdown was just turned off, clear the live text
-        # back to a static message; if turned on, the next tick will pick it up.
         if not self.show_countdown_var.get() and self.target_time is not None:
             self.set_status(f"Waiting until {self.target_time.strftime('%H:%M:%S')}...")
 
@@ -196,7 +192,7 @@ class MP3SchedulerApp:
 
         self.root.configure(background=colors["bg"])
 
-    # ---------------- Helpers ----------------
+    #helpers
 
     def browse_file(self):
         path = filedialog.askopenfilename(
@@ -292,8 +288,8 @@ class MP3SchedulerApp:
         minutes, secs = divmod(rem, 60)
         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
-    # ---------------- Scheduling / playback ----------------
-
+    #playback
+    
     def on_schedule(self):
         source = self.selected_path.get().strip()
         if not source:
@@ -342,7 +338,6 @@ class MP3SchedulerApp:
 
     def run_schedule(self, source, target_time):
         last_tick = 0.0
-        # Wait loop, checking the cancel flag periodically
         while True:
             if self.stop_flag:
                 self.root.after(0, self.finish_cancelled)
@@ -354,14 +349,12 @@ class MP3SchedulerApp:
 
             remaining = (target_time - now).total_seconds()
 
-            # Refresh the countdown roughly once a second, not every 0.5s tick
             if self.show_countdown_var.get() and (time.monotonic() - last_tick) >= 1.0:
                 last_tick = time.monotonic()
                 self.root.after(0, lambda r=remaining: self.set_status(f"Waiting... {self.format_remaining(r)} remaining"))
 
             time.sleep(min(remaining, 0.5))
 
-        # Resolve the actual file to play now, in case it's a folder pick
         if self.selection_mode.get() == "folder":
             mp3s = self.find_mp3s_in_folder(source)
             if not mp3s:
